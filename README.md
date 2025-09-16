@@ -17,6 +17,11 @@
 - **构建工具**：Maven 3.8+
 - **数据库**：H2 Memory Database (开发环境)
 
+## 配置
+在运行项目之前，您需要配置您的 API 密钥。
+1.  复制 `src/main/resources/application.properties.template` 文件并将其重命名为 `application.properties`。
+2.  打开新的 `application.properties` 文件，并将 `YOUR_API_KEY_HERE` 替换为您的真实 API 密钥。
+
 ## 快速启动
 ### 开发环境
 ```bash

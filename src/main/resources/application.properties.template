@@ -1,0 +1,7 @@
+spring.application.name=travel-randomizer
+spring.jpa.defer-datasource-initialization=true
+
+# Volcano Engine Ark API Configuration
+ark.api.url=https://ark.cn-beijing.volces.com/api/v3/chat/completions
+ark.api.key=YOUR_API_KEY_HERE
+ark.api.model=ep-20250703170057-z8ls7
