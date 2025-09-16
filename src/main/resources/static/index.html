@@ -1,0 +1,742 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="zh-CN">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>下一站，去哪儿？</title>-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>-->
+<!--    <style>-->
+<!--        /* 这里是一些简单的样式，让页面更好看 */-->
+<!--        body {-->
+<!--            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;-->
+<!--            display: flex;-->
+<!--            justify-content: center;-->
+<!--            align-items: center;-->
+<!--            height: 100vh;-->
+<!--            margin: 0;-->
+<!--            background-color: #f0f2f5;-->
+<!--        }-->
+<!--        .container {-->
+<!--            text-align: center;-->
+<!--            background-color: white;-->
+<!--            padding: 40px;-->
+<!--            border-radius: 10px;-->
+<!--            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);-->
+<!--            width: 90%;-->
+<!--            max-width: 600px; /* 稍微加宽一点以容纳地图 */-->
+<!--        }-->
+<!--        h1 {-->
+<!--            color: #333;-->
+<!--        }-->
+<!--        #map-container {-->
+<!--            width: 100%;-->
+<!--            height: 400px;-->
+<!--            margin-top: 20px;-->
+<!--        }-->
+<!--        #destination-result {-->
+<!--            margin-top: 20px;-->
+<!--            padding: 20px;-->
+<!--            background-color: #eef7ff;-->
+<!--            border: 1px dashed #a9c7e8;-->
+<!--            border-radius: 5px;-->
+<!--            font-size: 1.5em;-->
+<!--            color: #2c5a8c;-->
+<!--            min-height: 120px;-->
+<!--            display: flex;-->
+<!--            flex-direction: column;-->
+<!--            justify-content: center;-->
+<!--            align-items: center;-->
+<!--            transition: background-color 0.3s ease;-->
+<!--        }-->
+<!--        #random-btn {-->
+<!--            margin-top: 30px;-->
+<!--            padding: 12px 25px;-->
+<!--            font-size: 1em;-->
+<!--            color: white;-->
+<!--            background-color: #007bff;-->
+<!--            border: none;-->
+<!--            border-radius: 5px;-->
+<!--            cursor: pointer;-->
+<!--            transition: background-color 0.3s ease;-->
+<!--        }-->
+<!--        #random-btn:hover {-->
+<!--            background-color: #0056b3;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<div class="container">-->
+<!--    <h1>下一站，去哪儿？</h1>-->
+<!--    <div id="map-container"></div>-->
+<!--    <div id="destination-result">-->
+<!--        <p>点击按钮，开始你的未知旅行！</p>-->
+<!--    </div>-->
+<!--    <button id="random-btn">随机抽取一个目的地</button>-->
+<!--</div>-->
+
+<!--<script>-->
+<!--    document.addEventListener('DOMContentLoaded', function () {-->
+<!--        var myChart;-->
+<!--        const randomBtn = document.getElementById('random-btn');-->
+<!--        const destinationResultDiv = document.getElementById('destination-result');-->
+<!--        const mapDom = document.getElementById('map-container');-->
+
+<!--        // 初始化地图，并加载市级精度的全国地图-->
+<!--        myChart = echarts.init(mapDom);-->
+<!--        myChart.showLoading();-->
+<!--        fetch('/maps/china_city.json') // 确保这里加载的是您的市级地图文件-->
+<!--            .then(res => res.json())-->
+<!--            .then(chinaJson => {-->
+<!--                myChart.hideLoading();-->
+<!--                echarts.registerMap('ChinaCity', chinaJson); // 注册一个新的地图名，如 ChinaCity-->
+<!--                var option = {-->
+<!--                    tooltip: { trigger: 'item' },-->
+<!--                    series: [{-->
+<!--                        name: '中国城市',-->
+<!--                        type: 'map',-->
+<!--                        map: 'ChinaCity', // 使用刚刚注册的市级地图-->
+<!--                        roam: true,-->
+<!--                        emphasis: { label: { show: true } }-->
+<!--                    }]-->
+<!--                };-->
+<!--                myChart.setOption(option, true);-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('市级地图数据加载失败:', error);-->
+<!--                myChart.hideLoading();-->
+<!--            });-->
+
+<!--        // -&#45;&#45; 核心功能函数：根据“市”名获取并展示信息 -&#45;&#45;-->
+<!--        function fetchAndDisplayCityInfo(cityName) {-->
+<!--            myChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });-->
+<!--            myChart.dispatchAction({ type: 'highlight', seriesIndex: 0, name: cityName });-->
+<!--            destinationResultDiv.innerHTML = `<h2>正在查询 ${cityName} 的旅游信息...</h2>`;-->
+
+<!--            // 调用我们刚刚创建的按市查询的API-->
+<!--            fetch(`/api/destinations/info/city/${cityName}`)-->
+<!--                .then(res => {-->
+<!--                    if (!res.ok) throw new Error('该地区暂无详细旅游信息');-->
+<!--                    return res.json();-->
+<!--                })-->
+<!--                .then(dataList => {-->
+<!--                    let htmlContent = `<h2>${cityName} 旅游资源</h2>`;-->
+<!--                    htmlContent += '<ul style="list-style-type: none; padding-left: 0; text-align: left;">';-->
+<!--                    dataList.forEach(dest => {-->
+<!--                        htmlContent += `<li style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"><strong>${dest.district}</strong><p style="margin: 5px 0; font-size: 0.9em; color: #555;"><strong>推荐:</strong> ${dest.attractionInfo}</p><a href="${dest.tourismUrl}" target="_blank" style="font-size: 0.8em; color: #007bff; text-decoration: none;">前往当地文旅官网</a></li>`;-->
+<!--                    });-->
+<!--                    htmlContent += '</ul>';-->
+<!--                    destinationResultDiv.innerHTML = htmlContent;-->
+<!--                })-->
+<!--                .catch(error => {-->
+<!--                    destinationResultDiv.innerHTML = `<h2>${cityName}</h2><p style="color: #888;">${error.message}</p>`;-->
+<!--                });-->
+<!--        }-->
+
+<!--        // -&#45;&#45; 随机按钮点击事件 (已适配市级逻辑) -&#45;&#45;-->
+<!--        randomBtn.addEventListener('click', () => {-->
+<!--            destinationResultDiv.innerHTML = '<p>正在为你抽取命运中的目的地...</p>';-->
+<!--            fetch('/api/destinations/random')-->
+<!--                .then(res => res.json())-->
+<!--                .then(data => {-->
+<!--                    // `data` 是一个随机区县，我们用它的 `city` 字段来查询-->
+<!--                    fetchAndDisplayCityInfo(data.city);-->
+<!--                });-->
+<!--        });-->
+
+<!--        // -&#45;&#45; 地图点击事件 (已适配市级逻辑) -&#45;&#45;-->
+<!--        myChart.on('click', function (params) {-->
+<!--            // `params.name` 现在是城市名，例如 "成都市"-->
+<!--            fetchAndDisplayCityInfo(params.name);-->
+<!--        });-->
+<!--    });-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="zh-CN">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>下一站，去哪儿？</title>-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>-->
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;-->
+<!--            background-color: #f8f9fa;-->
+<!--            padding: 20px;-->
+<!--        }-->
+<!--        .container-fluid {-->
+<!--            max-width: 1400px;-->
+<!--        }-->
+<!--        .map-container {-->
+<!--            background-color: white;-->
+<!--            padding: 20px;-->
+<!--            border-radius: 10px;-->
+<!--            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);-->
+<!--            margin-bottom: 20px;-->
+<!--        }-->
+<!--        #map-container {-->
+<!--            width: 100%;-->
+<!--            height: 500px;-->
+<!--            margin-top: 20px;-->
+<!--        }-->
+<!--        #destination-result {-->
+<!--            margin-top: 20px;-->
+<!--            padding: 20px;-->
+<!--            background-color: #eef7ff;-->
+<!--            border: 1px dashed #a9c7e8;-->
+<!--            border-radius: 5px;-->
+<!--            font-size: 1.5em;-->
+<!--            color: #2c5a8c;-->
+<!--            min-height: 120px;-->
+<!--            display: flex;-->
+<!--            flex-direction: column;-->
+<!--            justify-content: center;-->
+<!--            align-items: center;-->
+<!--            transition: background-color 0.3s ease;-->
+<!--        }-->
+<!--        #random-btn {-->
+<!--            margin-top: 30px;-->
+<!--            padding: 12px 25px;-->
+<!--            font-size: 1em;-->
+<!--            color: white;-->
+<!--            background-color: #007bff;-->
+<!--            border: none;-->
+<!--            border-radius: 5px;-->
+<!--            cursor: pointer;-->
+<!--            transition: background-color 0.3s ease;-->
+<!--        }-->
+<!--        #random-btn:hover {-->
+<!--            background-color: #0056b3;-->
+<!--        }-->
+<!--        .card {-->
+<!--            margin-bottom: 20px;-->
+<!--            border-radius: 10px;-->
+<!--            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);-->
+<!--        }-->
+<!--        .card-header {-->
+<!--            border-radius: 10px 10px 0 0 !important;-->
+<!--        }-->
+
+<!--        /* -&#45;&#45; AI聊天样式优化 -&#45;&#45; */-->
+<!--        .chat-box {-->
+<!--            height: 300px;-->
+<!--            overflow-y: auto;-->
+<!--            border: 1px solid #ddd;-->
+<!--            padding: 10px;-->
+<!--            background-color: white;-->
+<!--            border-radius: 5px;-->
+<!--            margin-bottom: 15px;-->
+<!--        }-->
+<!--        .chat-message {-->
+<!--            display: flex;-->
+<!--            flex-direction: column;-->
+<!--            margin-bottom: 10px;-->
+<!--        }-->
+<!--        /* 用户消息靠右 */-->
+<!--        .user-message {-->
+<!--            align-items: flex-end;-->
+<!--        }-->
+<!--        /* AI消息靠左 */-->
+<!--        .ai-message {-->
+<!--            align-items: flex-start;-->
+<!--        }-->
+<!--        .message-bubble {-->
+<!--            padding: 8px 12px;-->
+<!--            border-radius: 15px;-->
+<!--            max-width: 85%;-->
+<!--            font-size: 0.95em;-->
+<!--            /* -&#45;&#45; 关键CSS属性 -&#45;&#45; */-->
+<!--            white-space: pre-wrap;  /* 保留换行符和空格，并自动换行 */-->
+<!--            word-wrap: break-word;   /* 在长单词或 URL 地址内部进行换行 */-->
+<!--        }-->
+<!--        .user-message .message-bubble {-->
+<!--            background-color: #0d6efd;-->
+<!--            color: white;-->
+<!--        }-->
+<!--        .ai-message .message-bubble {-->
+<!--            background-color: #e9ecef;-->
+<!--            color: #212529;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--<div class="container-fluid">-->
+<!--    <div class="row">-->
+<!--        &lt;!&ndash; 左侧：地图和目的地展示 &ndash;&gt;-->
+<!--        <div class="col-md-8">-->
+<!--            <div class="map-container">-->
+<!--                <h1>下一站，去哪儿？</h1>-->
+<!--                <div id="map-container"></div>-->
+<!--                <div id="destination-result">-->
+<!--                    <p>点击按钮，开始你的未知旅行！</p>-->
+<!--                </div>-->
+<!--                <button id="random-btn" class="btn btn-primary">随机抽取一个目的地</button>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        &lt;!&ndash; 右侧：AI聊天助手 &ndash;&gt;-->
+<!--        <div class="col-md-4">-->
+<!--            <div id="ai-assistant">-->
+<!--                <div class="card shadow-sm">-->
+<!--                    <div class="card-header bg-secondary text-white">-->
+<!--                        <h4 class="card-title mb-0">AI旅行助手</h4>-->
+<!--                    </div>-->
+<!--                    <div class="card-body">-->
+<!--                        <div class="chat-box" ref="chatBox">-->
+<!--                            <div v-for="message in chatMessages" class="chat-message" :class="message.role === 'user' ? 'user-message' : 'ai-message'">-->
+<!--                                <div class="message-bubble">-->
+<!--                                    {{ message.content }}-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div v-if="isLoading" class="d-flex justify-content-center">-->
+<!--                                <div class="spinner-border text-secondary" role="status">-->
+<!--                                    <span class="visually-hidden">加载中...</span>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        <div class="input-group mt-3">-->
+<!--                            <input type="text" class="form-control" placeholder="向AI助手提问..." v-model="userInput" @keyup.enter="sendMessage">-->
+<!--                            <button class="btn btn-outline-secondary" type="button" @click="sendMessage">发送</button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--<script>-->
+<!--    // 地图功能部分-->
+<!--    document.addEventListener('DOMContentLoaded', function () {-->
+<!--        var myChart;-->
+<!--        const randomBtn = document.getElementById('random-btn');-->
+<!--        const destinationResultDiv = document.getElementById('destination-result');-->
+<!--        const mapDom = document.getElementById('map-container');-->
+
+<!--        // 初始化地图，并加载市级精度的全国地图-->
+<!--        myChart = echarts.init(mapDom);-->
+<!--        myChart.showLoading();-->
+<!--        fetch('/maps/china_city.json')-->
+<!--            .then(res => res.json())-->
+<!--            .then(chinaJson => {-->
+<!--                myChart.hideLoading();-->
+<!--                echarts.registerMap('ChinaCity', chinaJson);-->
+<!--                var option = {-->
+<!--                    tooltip: { trigger: 'item' },-->
+<!--                    series: [{-->
+<!--                        name: '中国城市',-->
+<!--                        type: 'map',-->
+<!--                        map: 'ChinaCity',-->
+<!--                        roam: true,-->
+<!--                        emphasis: { label: { show: true } }-->
+<!--                    }]-->
+<!--                };-->
+<!--                myChart.setOption(option, true);-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('市级地图数据加载失败:', error);-->
+<!--                myChart.hideLoading();-->
+<!--            });-->
+
+<!--        // 根据"市"名获取并展示信息-->
+<!--        function fetchAndDisplayCityInfo(cityName) {-->
+<!--            myChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });-->
+<!--            myChart.dispatchAction({ type: 'highlight', seriesIndex: 0, name: cityName });-->
+<!--            destinationResultDiv.innerHTML = `<h2>正在查询 ${cityName} 的旅游信息...</h2>`;-->
+
+<!--            fetch(`/api/destinations/info/city/${cityName}`)-->
+<!--                .then(res => {-->
+<!--                    if (!res.ok) throw new Error('该地区暂无详细旅游信息');-->
+<!--                    return res.json();-->
+<!--                })-->
+<!--                .then(dataList => {-->
+<!--                    let htmlContent = `<h2>${cityName} 旅游资源</h2>`;-->
+<!--                    htmlContent += '<ul style="list-style-type: none; padding-left: 0; text-align: left;">';-->
+<!--                    dataList.forEach(dest => {-->
+<!--                        htmlContent += `<li style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"><strong>${dest.district}</strong><p style="margin: 5px 0; font-size: 0.9em; color: #555;"><strong>推荐:</strong> ${dest.attractionInfo}</p><a href="${dest.tourismUrl}" target="_blank" style="font-size: 0.8em; color: #007bff; text-decoration: none;">前往当地文旅官网</a></li>`;-->
+<!--                    });-->
+<!--                    htmlContent += '</ul>';-->
+<!--                    destinationResultDiv.innerHTML = htmlContent;-->
+<!--                })-->
+<!--                .catch(error => {-->
+<!--                    destinationResultDiv.innerHTML = `<h2>${cityName}</h2><p style="color: #888;">${error.message}</p>`;-->
+<!--                });-->
+<!--        }-->
+
+<!--        // 随机按钮点击事件-->
+<!--        randomBtn.addEventListener('click', () => {-->
+<!--            destinationResultDiv.innerHTML = '<p>正在为你抽取命运中的目的地...</p>';-->
+<!--            fetch('/api/destinations/random')-->
+<!--                .then(res => res.json())-->
+<!--                .then(data => {-->
+<!--                    fetchAndDisplayCityInfo(data.city);-->
+<!--                });-->
+<!--        });-->
+
+<!--        // 地图点击事件-->
+<!--        myChart.on('click', function (params) {-->
+<!--            fetchAndDisplayCityInfo(params.name);-->
+<!--        });-->
+<!--    });-->
+
+<!--    // AI聊天助手部分 (Vue应用)-->
+<!--    const { createApp } = Vue;-->
+
+<!--    createApp({-->
+<!--        data() {-->
+<!--            return {-->
+<!--                userInput: '',-->
+<!--                chatMessages: [-->
+<!--                    { role: 'ai', content: '你好！我是你的旅行助手，有什么可以帮你的吗？' }-->
+<!--                ],-->
+<!--                isLoading: false-->
+<!--            }-->
+<!--        },-->
+<!--        methods: {-->
+<!--            async sendMessage() {-->
+<!--                if (!this.userInput.trim()) return;-->
+
+<!--                const userMessage = { role: 'user', content: this.userInput };-->
+<!--                this.chatMessages.push(userMessage);-->
+<!--                this.isLoading = true;-->
+<!--                this.scrollToBottom();-->
+
+<!--                try {-->
+<!--                    const response = await fetch('/api/ai/chat', {-->
+<!--                        method: 'POST',-->
+<!--                        headers: {-->
+<!--                            'Content-Type': 'application/json'-->
+<!--                        },-->
+<!--                        body: JSON.stringify({ message: this.userInput })-->
+<!--                    });-->
+
+<!--                    this.userInput = ''; // 发送后清空输入框-->
+
+<!--                    if (!response.ok) {-->
+<!--                        const errorData = await response.json();-->
+<!--                        throw new Error(errorData.error || 'AI服务出错');-->
+<!--                    }-->
+
+<!--                    const data = await response.json();-->
+<!--                    const aiMessage = { role: 'ai', content: data.reply };-->
+<!--                    this.chatMessages.push(aiMessage);-->
+
+<!--                } catch (error) {-->
+<!--                    console.error('发送消息出错:', error);-->
+<!--                    const errorMessage = { role: 'ai', content: '抱歉，我遇到了错误: ' + error.message };-->
+<!--                    this.chatMessages.push(errorMessage);-->
+<!--                } finally {-->
+<!--                    this.isLoading = false;-->
+<!--                    this.scrollToBottom();-->
+<!--                }-->
+<!--            },-->
+<!--            scrollToBottom() {-->
+<!--                this.$nextTick(() => {-->
+<!--                    const chatBox = this.$refs.chatBox;-->
+<!--                    chatBox.scrollTop = chatBox.scrollHeight;-->
+<!--                });-->
+<!--            }-->
+<!--        }-->
+<!--    }).mount('#ai-assistant')-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下一站，去哪儿？</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container-fluid {
+            max-width: 1400px;
+        }
+        .map-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        #map-container {
+            width: 100%;
+            height: 500px;
+            margin-top: 20px;
+        }
+        #destination-result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #eef7ff;
+            border: 1px dashed #a9c7e8;
+            border-radius: 5px;
+            font-size: 1.5em;
+            color: #2c5a8c;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+        #random-btn {
+            margin-top: 30px;
+            padding: 12px 25px;
+            font-size: 1em;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #random-btn:hover {
+            background-color: #0056b3;
+        }
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .chat-box {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .user-message {
+            align-items: flex-end;
+        }
+        .ai-message {
+            align-items: flex-start;
+        }
+        .message-bubble {
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 85%;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .user-message .message-bubble {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .ai-message .message-bubble {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="map-container">
+                <h1 class="text-center">下一站，去哪儿？</h1>
+                <div id="map-container"></div>
+                <div id="destination-result">
+                    <p>点击按钮，开始你的未知旅行！</p>
+                </div>
+                <div class="text-center">
+                    <button id="random-btn" class="btn btn-primary">随机抽取一个目的地</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div id="ai-assistant">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h4 class="card-title mb-0">AI旅行助手</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chat-box" ref="chatBox">
+                            <div v-for="message in chatMessages" class="chat-message" :class="message.role === 'user' ? 'user-message' : 'ai-message'">
+                                <div class="message-bubble">
+                                    {{ message.content }}
+                                </div>
+                            </div>
+                            <div v-if="isLoading" class="d-flex justify-content-center">
+                                <div class="spinner-border text-secondary" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group mt-3">
+                            <input type="text" class="form-control" placeholder="向AI助手提问..." v-model="userInput" @keyup.enter="sendMessage">
+                            <button class="btn btn-outline-secondary" type="button" @click="sendMessage">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 地图功能部分
+    document.addEventListener('DOMContentLoaded', function () {
+        var myChart;
+        const randomBtn = document.getElementById('random-btn');
+        const destinationResultDiv = document.getElementById('destination-result');
+        const mapDom = document.getElementById('map-container');
+
+        myChart = echarts.init(mapDom);
+        myChart.showLoading();
+        fetch('/maps/china_city.json')
+            .then(res => res.json())
+            .then(chinaJson => {
+                myChart.hideLoading();
+                echarts.registerMap('ChinaCity', chinaJson);
+                var option = {
+                    tooltip: { trigger: 'item' },
+                    series: [{
+                        name: '中国城市',
+                        type: 'map',
+                        map: 'ChinaCity',
+                        roam: true,
+                        emphasis: { label: { show: true } }
+                    }]
+                };
+                myChart.setOption(option, true);
+            })
+            .catch(error => {
+                console.error('市级地图数据加载失败:', error);
+                myChart.hideLoading();
+            });
+
+        function fetchAndDisplayCityInfo(cityName) {
+            myChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+            myChart.dispatchAction({ type: 'highlight', seriesIndex: 0, name: cityName });
+            destinationResultDiv.innerHTML = `<h2>正在查询 ${cityName} 的旅游信息...</h2>`;
+
+            fetch(`/api/destinations/info/city/${cityName}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('该地区暂无详细旅游信息');
+                    return res.json();
+                })
+                .then(dataList => {
+                    let htmlContent = `<h2>${cityName} 旅游资源</h2>`;
+                    htmlContent += '<ul style="list-style-type: none; padding-left: 0; text-align: left;">';
+
+                    // Fix 2: 处理 district 为 null 的情况
+                    dataList.forEach(dest => {
+                        // 只有当 dest.district 存在时，才创建它的 strong 标签
+                        const districtHtml = dest.district ? `<strong>${dest.district}</strong>` : '';
+
+                        htmlContent += `<li style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">` +
+                            `${districtHtml}` + // districtHtml 可能为空字符串
+                            `<p style="margin: 5px 0; font-size: 0.9em; color: #555;"><strong>推荐:</strong> ${dest.attractionInfo}</p>` +
+                            `<a href="${dest.tourismUrl}" target="_blank" style="font-size: 0.8em; color: #007bff; text-decoration: none;">前往当地文旅官网</a></li>`;
+                    });
+
+                    htmlContent += '</ul>';
+                    destinationResultDiv.innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    destinationResultDiv.innerHTML = `<h2>${cityName}</h2><p style="color: #888;">${error.message}</p>`;
+                });
+        }
+
+        randomBtn.addEventListener('click', () => {
+            destinationResultDiv.innerHTML = '<p>正在为你抽取命运中的目的地...</p>';
+            fetch('/api/destinations/random')
+                .then(res => res.json())
+                .then(data => {
+                    fetchAndDisplayCityInfo(data.city);
+                });
+        });
+
+        myChart.on('click', function (params) {
+            fetchAndDisplayCityInfo(params.name);
+        });
+    });
+
+    // AI聊天助手部分 (Vue应用)
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                userInput: '',
+                chatMessages: [
+                    { role: 'ai', content: '你好！我是你的旅行助手，有什么可以帮你的吗？' }
+                ],
+                isLoading: false
+            }
+        },
+        methods: {
+            async sendMessage() {
+                if (!this.userInput.trim()) return;
+
+                const userMessage = { role: 'user', content: this.userInput };
+                this.chatMessages.push(userMessage);
+                this.isLoading = true;
+                this.scrollToBottom();
+
+                try {
+                    const response = await fetch('/api/ai/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: this.userInput })
+                    });
+
+                    this.userInput = '';
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'AI服务出错');
+                    }
+
+                    const data = await response.json();
+                    const aiMessage = { role: 'ai', content: data.reply };
+                    this.chatMessages.push(aiMessage);
+
+                } catch (error) {
+                    console.error('发送消息出错:', error);
+                    const errorMessage = { role: 'ai', content: '抱歉，我遇到了错误: ' + error.message };
+                    this.chatMessages.push(errorMessage);
+                } finally {
+                    this.isLoading = false;
+                    this.scrollToBottom();
+                }
+            },
+            scrollToBottom() {
+                this.$nextTick(() => {
+                    const chatBox = this.$refs.chatBox;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                });
+            }https://pan.xunlei.com/s/VNrmg-ZMnprJgOF-e2BtoODVA1?pwd=ygx9
+        }
+    }).mount('#ai-assistant')
+</script>
+</body>
+</html>
