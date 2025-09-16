@@ -1,60 +1,107 @@
 # Travel Randomizer 旅行随机器
 
-## 项目简介
-基于Spring Boot + Vue.js的智能旅行目的地推荐系统，包含地图交互、AI咨询和随机推荐核心功能。
+## 📖 项目简介
 
-## 功能特性
-- 🌍 中国地图交互：点击选择目的地
-- 🎲 随机城市推荐引擎
-- 💬 AI旅行顾问（基于OpenAI API）
-- 📱 响应式布局支持移动端访问
-- 📊 ECharts数据可视化
+**Travel Randomizer** 是一个基于 Spring Boot 和 Vue.js 的智能旅行目的地推荐系统。它巧妙地结合了交互式地图、随机推荐引擎和 AI 旅行助手，旨在为用户提供新颖有趣的旅行灵感。
 
-## 技术栈
-- **后端**：Spring Boot (Java 17+)
-- **前端**：Vue.js 3.x + Bootstrap 5.1.3
-- **地图**：ECharts 5.x + 中国城市GeoJSON数据
-- **构建工具**：Maven 3.8+
-- **数据库**：H2 Memory Database (开发环境)
+无论你是对众多目的地感到迷茫，还是想通过一次“命运的安排”来决定下一站，这个项目都能给你带来惊喜。
 
-## 配置
-在运行项目之前，您需要配置您的 API 密钥。
-1.  复制 `src/main/resources/application.properties.template` 文件并将其重命名为 `application.properties`。
-2.  打开新的 `application.properties` 文件，并将 `YOUR_API_KEY_HERE` 替换为您的真实 API 密钥。
+---
 
-## 快速启动
-### 开发环境
+## ✨ 功能特性
+
+-   🌍 **交互式地图**：在中国地图上直观地点击省市，即可获取该地区的详细旅游资源和官方文旅链接。
+-   🎲 **随机推荐引擎**：只需一次点击，系统就会为你随机抽取一个旅行目的地，让你的下一次旅行充满未知和期待。
+-   💬 **AI 旅行助手**：集成强大的语言模型，你可以像与真人对话一样，咨询关于目的地的任何问题，无论是天气、美食还是行程建议，AI 都能为你解答。
+-   📱 **响应式布局**：完美适配桌面和移动设备，让你随时随地都能探索下一个目的地。
+-   📊 **数据可视化**：通过 ECharts 精美地展示中国地图和相关数据。
+
+---
+
+## 🚀 如何使用
+
+项目启动后，在浏览器中打开 `http://localhost:8080` 即可访问主页面。
+
+### 1. 探索地图
+
+-   **点击交互**：在页面左侧的中国地图上，你可以用鼠标点击任意一个城市。
+-   **获取信息**：点击后，系统会立刻查询并展示该城市的旅游资源列表，包括其下属区县的推荐景点和当地文旅局的官方网站链接。
+
+### 2. 随机抽取目的地
+
+-   **寻找灵感**：如果你不知道该去哪里，可以点击地图下方的 **“随机抽取一个目的地”** 按钮。
+-   **查看结果**：系统会立即为你随机选择一个城市，并在地图上高亮显示，同时加载出该城市的详细旅游信息。
+
+### 3. 与 AI 旅行助手对话
+
+-   **打开聊天框**：在页面右侧是 AI 旅行助手模块。
+-   **开始提问**：在底部的输入框中，输入你关心的任何旅行问题，例如：
+    -   `“我应该夏天去哈尔滨吗？有什么推荐？”`
+    -   `“介绍一下成都的美食。”`
+    -   `“帮我规划一个为期三天的西安家庭游路线。”`
+-   **获取答案**：点击“发送”或按下回车键，AI 助手就会为你提供详细的解答和建议。
+
+---
+
+## 🛠️ 技术栈
+
+-   **后端**: Spring Boot (Java 17+)
+-   **前端**: Vue.js 3.x, Bootstrap 5.1.3
+-   **地图与可视化**: ECharts 5.x
+-   **构建工具**: Maven 3.8+
+-   **开发数据库**: H2 Memory Database
+
+---
+
+## ⚙️ 本地部署与运行
+
+### 1. 环境准备
+
+-   确保你已安装 Java 17 (JDK 17) 或更高版本。
+-   确保你已安装 Apache Maven 3.8 或更高版本。
+
+### 2. 配置
+
+在首次运行项目之前，你需要配置你的 AI 服务 API 密钥。
+
+1.  在 `src/main/resources/` 目录下，找到 `application.properties.template` 文件。
+2.  **复制** 该文件并将其重命名为 `application.properties`。
+3.  打开新的 `application.properties` 文件，找到 `ark.api.key` 字段，并将其值 `YOUR_API_KEY_HERE` 替换为你的真实 API 密钥。
+
+### 3. 启动项目
+
+打开终端或命令提示符，进入项目根目录，然后执行以下命令：
+
 ```bash
-# Windows系统
-mvnw.cmd clean package
-java -jar target/travel-randomizer-0.0.1-SNAPSHOT.jar
+# 对于 Windows 系统
+mvnw.cmd spring-boot:run
+
+# 对于 macOS / Linux 系统
+./mvnw spring-boot:run
 ```
 
-### 生产构建
-```bash
-mvnw.cmd -Pprod clean package
-```
+当看到类似 `Tomcat started on port(s): 8080` 的日志输出时，说明项目已成功启动。
 
-## 目录结构
-```
-├── src/main/java          # Java源代码
-├── src/main/resources
-│   ├── static             # 前端资源
-│   │   ├── maps           # 地图数据
-│   │   └── index.html     # 主页面
-│   └── application.properties # 配置文件
-├── pom.xml                # Maven项目配置
-└── HELP.md                # 开发文档
-```
+---
 
-## 贡献指南
-1. Fork仓库
-2. 创建feature分支
-3. 提交PR并附带完整测试说明
-4. 保持代码风格一致性
+## 🤝 贡献指南
 
-## 许可证
-MIT License
+我们欢迎任何形式的贡献！
 
-## 联系
-项目维护者：Tlh Team <https://github.com/woyaoxingfua>
+1.  Fork 本仓库。
+2.  创建一个新的 Feature 分支 (`git checkout -b feature/AmazingFeature`)。
+3.  提交你的代码 (`git commit -m 'Add some AmazingFeature'`)。
+4.  将你的分支推送到远程仓库 (`git push origin feature/AmazingFeature`)。
+5.  提交一个 Pull Request。
+
+---
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详情请见 `LICENSE` 文件。
+
+---
+
+## 📫 联系
+
+项目维护者：Tlh Team - [https://github.com/woyaoxingfua](https://github.com/woyaoxingfua)
